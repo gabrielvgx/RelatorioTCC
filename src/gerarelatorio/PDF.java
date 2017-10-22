@@ -5,15 +5,11 @@
  */
 package gerarelatorio;
 
-import com.itextpdf.text.BadElementException;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.pdf.PdfWriter;
-import java.awt.Color;
-import java.awt.Desktop;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -83,8 +79,8 @@ public class PDF implements Documento {
 // cria o gráfico
             JFreeChart grafico = ChartFactory.createLineChart("Meu Grafico", "Dia",
                     "Valor", ds, PlotOrientation.VERTICAL, true, true, false);
-OutputStream arquivo = new FileOutputStream("grafico.png");
-ChartUtilities.writeChartAsPNG(arquivo, grafico, 550, 400);
+            OutputStream arquivo = new FileOutputStream("grafico.png");
+            ChartUtilities.writeChartAsPNG(arquivo, grafico, 550, 400);
             doc.addCreationDate();
             doc.addTitle("Titulo");
             Image graf = Image.getInstance("grafico.png");
