@@ -5,22 +5,33 @@
  */
 package gerarelatorio;
 
+import com.itextpdf.text.BadElementException;
+import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Element;
+import com.itextpdf.text.Font;
+import com.itextpdf.text.Font.FontFamily;
+import com.itextpdf.text.FontFactory;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PiePlot3D;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.data.general.DefaultPieDataset;
+import org.jfree.util.Rotation;
 
 /**
  *
@@ -28,74 +39,218 @@ import org.jfree.data.category.DefaultCategoryDataset;
  */
 public class PDF implements Documento {
 
+    private Document doc;
+    private PdfWriter escritor;
+
     public PDF() {
 
     }
 
     @Override
-    public void addTitulo(String titulo, int x, int y) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void gerarDocumento() throws IOException, DocumentException {
+        doc = new Document();
+        PdfWriter.getInstance(doc, new FileOutputStream("documento.pdf"));
+        doc.open();
     }
 
     @Override
-    public void addImagem(Object img, int x, int y) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void gerarDocumento(String nomeDocumento) throws IOException, DocumentException {
+        doc = new Document();
+        PdfWriter.getInstance(doc, new FileOutputStream(nomeDocumento + ".pdf"));
+        doc.open();
     }
 
     @Override
-    public void addGrafico(Object grafico, int x, int y) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void addTituloDocumento(String titulo) throws DocumentException {
+        doc.addTitle(titulo);
     }
 
     @Override
-    public void addTexto(String texto, int x, int y) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void addImagem(Image img, int alinhamento, float largura, float altura) throws DocumentException {
+        img.scaleAbsolute(largura, altura);
+        img.setAlignment(alinhamento);
+        doc.add(img);
     }
 
     @Override
-    public void gerarDocumento() {
-        Document doc = new Document();
+    public void addGrafico(Image grafico, int alinhamento, float largura, float altura) throws DocumentException {
+        grafico.scaleAbsolute(largura, altura);
+        grafico.setAlignment(alinhamento);
+        doc.add(grafico);
+    }
+
+    @Override
+    public void addTexto(String texto, FontFamily fonte, int alinhamento, int tamanho, int estilo, BaseColor cor) throws DocumentException {
+        Paragraph textoParagrafo = new Paragraph(texto,FontFactory.getFont(fonte.name(), tamanho, estilo, cor));
+        textoParagrafo.setAlignment(alinhamento);
+        doc.add(textoParagrafo);
+    }
+    public void add(){
+        Paragraph p = new Paragraph("Hello",FontFactory.getFont(FontFactory.COURIER, 14, Font.BOLD, new BaseColor(255, 150, 200)));
+        p.setAlignment(Element.ALIGN_CENTER);
         try {
-            //PdfWriter.getInstance(doc, new FileOutputStream("documento.pdf"));
-            PdfWriter escritor = PdfWriter.getInstance(doc, new FileOutputStream("documento.pdf"));
-            doc.open();
-            for (int i = 0; i < 50; i++) {
-                doc.add(new Paragraph("teste"));
-            }
-            Image i = Image.getInstance("imagens/img.jpg");
-            i.scaleAbsolute(100f, 100f);
-
-            i.setAbsolutePosition(0f, 0f);
-            doc.add(i);
-            // cria o conjunto de dados
-            DefaultCategoryDataset ds = new DefaultCategoryDataset();
-            ds.addValue(40.5, "maximo", "dia 1");
-            ds.addValue(38.2, "maximo", "dia 2");
-            ds.addValue(37.3, "maximo", "dia 3");
-            ds.addValue(31.5, "maximo", "dia 4");
-            ds.addValue(35.7, "maximo", "dia 5");
-            ds.addValue(42.5, "maximo", "dia 6");
-
-// cria o gráfico
-            JFreeChart grafico = ChartFactory.createLineChart("Meu Grafico", "Dia",
-                    "Valor", ds, PlotOrientation.VERTICAL, true, true, false);
-            OutputStream arquivo = new FileOutputStream("grafico.png");
-            ChartUtilities.writeChartAsPNG(arquivo, grafico, 550, 400);
-            doc.addCreationDate();
-            doc.addTitle("Titulo");
-            Image graf = Image.getInstance("grafico.png");
-            doc.add(graf);
-            System.out.println("Nº pag: " + escritor.getPageNumber());
+            doc.add(p);
         } catch (DocumentException ex) {
-            System.out.println(ex.getMessage());
-        } catch (FileNotFoundException ex) {
             Logger.getLogger(PDF.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(PDF.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            doc.close();
         }
+    }
+    @Override
+    public void addTexto(String texto, Font fonte, int alinhamento) throws DocumentException {
+        Paragraph textoParagrafo = new Paragraph(texto,fonte);
+        textoParagrafo.setAlignment(alinhamento);
+        doc.add(textoParagrafo);
+    }
 
+    @Override
+    public void addTexto(String texto, Font fonte) throws DocumentException {
+        Paragraph textoParagrafo = new Paragraph(texto,fonte);
+        
+        textoParagrafo.setAlignment(Element.ALIGN_CENTER);
+        textoParagrafo.setSpacingBefore(-50f);
+        textoParagrafo.setSpacingAfter(50f);
+     //   textoParagrafo.setFont(fonte);
+        doc.add(textoParagrafo);
+    }
+
+    @Override
+    public void addTexto(String texto) throws DocumentException {
+        Paragraph textoParagrafo = new Paragraph(texto);
+        doc.add(textoParagrafo);
+    }
+
+    @Override
+    public void addTexto(String texto, int tamanho) throws DocumentException {
+        Paragraph textoParagrafo = new Paragraph(texto);
+        doc.add(textoParagrafo);
+    }
+
+    @Override
+    public void addTexto(String texto, int alinhamento, int tamanho) throws DocumentException {
+        Paragraph textoParagrafo = new Paragraph(texto);
+        textoParagrafo.setAlignment(alinhamento);
+        doc.add(textoParagrafo);
+    }
+
+    @Override
+    public void fecharDocumento() {
+        doc.close();
+        
+    }
+
+    @Override
+    public void addTabela(Paragraph[] celula, int nColunas) throws DocumentException {
+        PdfPTable tabela = new PdfPTable(nColunas);//Número de colunas
+        for (Paragraph paragrafoCelula : celula) {
+            tabela.addCell(paragrafoCelula);
+
+        }
+        if (tabela.getLastCompletedRowIndex() != tabela.getRows().size()) {
+            tabela.completeRow();
+        }
+        tabela.setTotalWidth(100f);
+        tabela.setLockedWidth(true);
+        doc.add(tabela);
+    }
+
+    @Override
+    public void addTabela(String[] celula, int nColunas) throws DocumentException {
+        PdfPTable tabela = new PdfPTable(nColunas);
+        int i=0;
+        for (String txtCelula : celula) {
+            i++;
+            Paragraph pr = new Paragraph(txtCelula, TemplateAnimal.textoSimples);
+            PdfPCell celulaPDF = new PdfPCell(pr);
+            celulaPDF.setBorder(0);
+            if(i%2 == 0){
+                celulaPDF.setColspan(2);
+            }
+            tabela.setLockedWidth(true);
+            tabela.setTotalWidth(550f);
+            if(txtCelula.contains("Nº") && !txtCelula.contains("Nº SISBOV")){
+                celulaPDF.setColspan(3);
+            }
+            celulaPDF.setMinimumHeight(25f);
+            tabela.addCell(celulaPDF);
+        }
+        
+        for(int j=tabela.getRows().size(); j>tabela.getLastCompletedRowIndex(); j--){
+            PdfPCell vazia = new PdfPCell(new Paragraph(""));
+            vazia.setBorder(0);
+            tabela.addCell(vazia);
+        }
+        
+        doc.add(tabela);
+    }
+
+    @Override
+    public void addGraficoCircular(String tituloGrafico, ArrayList<String> nome, ArrayList<Double> valor,
+            int larguraGrafico, int alturaGrafico)
+            throws IOException, BadElementException, DocumentException {
+
+        DefaultPieDataset data = new DefaultPieDataset();
+        for (int i = 0; i < nome.toArray().length; i++) {
+            data.setValue("" + nome.get(i), valor.get(i));
+        }
+        JFreeChart chart = ChartFactory.createPieChart3D(tituloGrafico,
+                data, true, true, true);
+        PiePlot3D plot = (PiePlot3D) chart.getPlot();
+        plot.setLabelLinksVisible(true);
+        plot.setNoDataMessage("Não existem dados para serem exibidos no gráfico");
+        plot.setStartAngle(90);
+        plot.setDirection(Rotation.CLOCKWISE);
+        plot.setForegroundAlpha(0.5f);
+        plot.setInteriorGap(0.20);
+        Image graf = graficoPNG(chart, tituloGrafico, larguraGrafico, alturaGrafico);
+        graf.setAlignment(Element.ALIGN_CENTER);
+        doc.add(graf);
+
+    }
+
+    @Override
+    public void addGraficoCircular(String tituloGrafico, ArrayList<String> nome, ArrayList<Double> valor) 
+            throws IOException, BadElementException, DocumentException {
+
+        DefaultPieDataset data = new DefaultPieDataset();
+        for (int i = 0; i < nome.toArray().length; i++) {
+            data.setValue(nome.get(i), valor.get(i));
+        }
+        JFreeChart chart = ChartFactory.createPieChart3D(tituloGrafico,
+                data, true, true, true);
+        PiePlot3D plot = (PiePlot3D) chart.getPlot();
+        plot.setLabelLinksVisible(true);
+        plot.setNoDataMessage("Não existem dados para serem exibidos no gráfico");
+        plot.setStartAngle(90);
+        plot.setDirection(Rotation.CLOCKWISE);
+        plot.setForegroundAlpha(0.5f);
+        plot.setInteriorGap(0.20);
+        Image graf = graficoPNG(chart, tituloGrafico, 300, 300);
+        graf.setAlignment(Element.ALIGN_CENTER);
+        doc.add(graf);
+
+    }
+    private Image graficoPNG(JFreeChart grafico, String tituloGrafico, int largura, int altura) throws IOException, BadElementException{
+        OutputStream arquivo = new FileOutputStream(tituloGrafico+".png");
+        ChartUtilities.writeChartAsPNG(arquivo, grafico, largura, altura);
+        Image png = Image.getInstance(tituloGrafico +".png");
+        return png;
+    }
+
+    @Override
+    public void addGraficoLinha(String tituloGrafico, String nomeLinha, 
+            String nomeColuna, ArrayList<String> nome, ArrayList<String> linha, double[][] valor) throws IOException,
+            BadElementException, DocumentException{
+
+        DefaultCategoryDataset ds = new DefaultCategoryDataset();
+        ds.addValue(40.5, "maximo", "dia 1");
+        for (int i = 0; i < nome.size(); i++) {
+            for (int j = 0; j < linha.size(); j++) {
+                ds.addValue(valor[j][i], linha.get(i), nome.get(j));
+            }
+        }
+        JFreeChart grafico = ChartFactory.createLineChart(tituloGrafico, nomeLinha,
+                nomeColuna, ds, PlotOrientation.VERTICAL, true, true, false);
+        Image png = graficoPNG(grafico, tituloGrafico, 300, 300);
+        doc.add(png);
     }
 
 }
