@@ -3,8 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package gerarelatorio;
+package InterfaceDocumento;
 
+import DadosTestes.DadosTesteAnimal;
+import GeraRelatorioPDF.PDF;
+import RelatorioAnimal.GerarRelatorioAnimal;
+import RelatorioAnimal.TemplateAnimal;
 import com.itextpdf.text.DocumentException;
 import java.awt.Desktop;
 import java.io.File;
@@ -21,14 +25,17 @@ public class GeraRelatorio {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) throws FileNotFoundException, DocumentException {
+    public static void main(String[] args) throws FileNotFoundException, DocumentException, IOException {
+        GerarRelatorioAnimal relatorioAnimal = new GerarRelatorioAnimal();
+        relatorioAnimal.criarRelatorio();
+        System.exit(0);
         try {
             PDF doc = new PDF();
             File pdf = new File("Resumo_Animal");
             doc.gerarDocumento(pdf.getName());
             doc.addTituloDocumento("Resumo Animal");//String texto, FontFamily fonte, int alinhamento, int tamanho, int estilo, BaseColor cor)
             doc.addTexto("Resumo Animal", TemplateAnimal.tituloPrincipal);
-            doc.addTabela(DadosTeste.dadosAnimalTabela(), 3);
+            doc.addTabela(DadosTesteAnimal.dadosAnimalTabela(), 3);
             ArrayList a = new ArrayList();
             ArrayList<Double> b = new ArrayList<>();
             ArrayList<String> nomes = new ArrayList<>();

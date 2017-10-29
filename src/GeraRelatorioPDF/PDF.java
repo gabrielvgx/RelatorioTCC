@@ -3,8 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package gerarelatorio;
+package GeraRelatorioPDF;
 
+import InterfaceDocumento.Documento;
+import RelatorioAnimal.TemplateAnimal;
 import com.itextpdf.text.BadElementException;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
@@ -21,20 +23,15 @@ import com.itextpdf.text.pdf.PdfWriter;
 import java.awt.Color;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartUtilities;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.CategoryPlot;
-import org.jfree.chart.plot.PiePlot3D;
-import org.jfree.chart.plot.Plot;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.data.category.DefaultCategoryDataset;
-import org.jfree.data.general.DefaultPieDataset;
-import org.jfree.util.Rotation;
+import java.util.List;
+import org.knowm.xchart.BitmapEncoder;
+import org.knowm.xchart.BitmapEncoder.BitmapFormat;
+import org.knowm.xchart.CategoryChart;
+import org.knowm.xchart.CategoryChartBuilder;
+import org.knowm.xchart.PieChart;
+import org.knowm.xchart.PieChartBuilder;
+import org.knowm.xchart.style.Styler.LegendPosition;
 
 /**
  *
@@ -52,7 +49,7 @@ public class PDF implements Documento {
     @Override
     public void gerarDocumento() throws IOException, DocumentException {
         doc = new Document();
-        PdfWriter.getInstance(doc, new FileOutputStream("documento.pdf"));
+        PdfWriter.getInstance(doc, new FileOutputStream("Relatorio.pdf"));
         doc.open();
     }
 
@@ -68,6 +65,13 @@ public class PDF implements Documento {
         doc.addTitle(titulo);
     }
 
+    public void addTitulo(String texto, Font f, int alinhamento) throws DocumentException {
+        Paragraph titulo = new Paragraph(texto, f);
+        titulo.setAlignment(alinhamento);
+        titulo.setSpacingAfter(50f);
+        doc.add(titulo);
+    }
+
     @Override
     public void addImagem(Image img, int alinhamento, float largura, float altura) throws DocumentException {
         img.scaleAbsolute(largura, altura);
@@ -76,27 +80,10 @@ public class PDF implements Documento {
     }
 
     @Override
-    public void addGrafico(Image grafico, int alinhamento, float largura, float altura) throws DocumentException {
-        grafico.scaleAbsolute(largura, altura);
-        grafico.setAlignment(alinhamento);
-        doc.add(grafico);
-    }
-
-    @Override
     public void addTexto(String texto, FontFamily fonte, int alinhamento, int tamanho, int estilo, BaseColor cor) throws DocumentException {
         Paragraph textoParagrafo = new Paragraph(texto, FontFactory.getFont(fonte.name(), tamanho, estilo, cor));
         textoParagrafo.setAlignment(alinhamento);
         doc.add(textoParagrafo);
-    }
-
-    public void add() {
-        Paragraph p = new Paragraph("Hello", FontFactory.getFont(FontFactory.COURIER, 14, Font.BOLD, new BaseColor(255, 150, 200)));
-        p.setAlignment(Element.ALIGN_CENTER);
-        try {
-            doc.add(p);
-        } catch (DocumentException ex) {
-            Logger.getLogger(PDF.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }
 
     @Override
@@ -109,11 +96,8 @@ public class PDF implements Documento {
     @Override
     public void addTexto(String texto, Font fonte) throws DocumentException {
         Paragraph textoParagrafo = new Paragraph(texto, fonte);
-
-        textoParagrafo.setAlignment(Element.ALIGN_CENTER);
         textoParagrafo.setSpacingBefore(-50f);
         textoParagrafo.setSpacingAfter(50f);
-        //   textoParagrafo.setFont(fonte);
         doc.add(textoParagrafo);
     }
 
@@ -125,29 +109,22 @@ public class PDF implements Documento {
 
     @Override
     public void addTexto(String texto, int tamanho) throws DocumentException {
-        Paragraph textoParagrafo = new Paragraph(texto);
+        Paragraph textoParagrafo = new Paragraph(texto, FontFactory.getFont(TemplateAnimal.fontePadrao, tamanho));
         doc.add(textoParagrafo);
     }
 
     @Override
     public void addTexto(String texto, int alinhamento, int tamanho) throws DocumentException {
-        Paragraph textoParagrafo = new Paragraph(texto);
+        Paragraph textoParagrafo = new Paragraph(texto, FontFactory.getFont(TemplateAnimal.fontePadrao, tamanho));
         textoParagrafo.setAlignment(alinhamento);
         doc.add(textoParagrafo);
     }
 
     @Override
-    public void fecharDocumento() {
-        doc.close();
-
-    }
-
-    @Override
     public void addTabela(Paragraph[] celula, int nColunas) throws DocumentException {
-        PdfPTable tabela = new PdfPTable(nColunas);//Número de colunas
+        PdfPTable tabela = new PdfPTable(nColunas);
         for (Paragraph paragrafoCelula : celula) {
             tabela.addCell(paragrafoCelula);
-
         }
         if (tabela.getLastCompletedRowIndex() != tabela.getRows().size()) {
             tabela.completeRow();
@@ -188,53 +165,46 @@ public class PDF implements Documento {
     }
 
     @Override
+    public void addTabela(Object tabela) throws DocumentException {
+        if (tabela instanceof PdfPTable) {
+            doc.add((PdfPTable) tabela);
+        } else {
+            throw new ClassCastException("Não é uma tabela para pdf itext!");
+        }
+    }
+
+    @Override
     public void addGraficoCircular(String tituloGrafico, ArrayList<String> nome, ArrayList<Double> valor,
             int larguraGrafico, int alturaGrafico)
             throws IOException, BadElementException, DocumentException {
 
-        DefaultPieDataset data = new DefaultPieDataset();
-        for (int i = 0; i < nome.toArray().length; i++) {
-            data.setValue("" + nome.get(i), valor.get(i));
+        PieChart chart = new PieChartBuilder().width(800).height(600).title(getClass().getSimpleName()).build();
+        Color[] cores = new Color[nome.size()];
+        for (int i = 0; i < nome.size(); i++) {
+            cores[i] = DadosTestes.Cores.getCores().get(i);
         }
-        JFreeChart chart = ChartFactory.createPieChart(tituloGrafico,
-                data, true, true, true);
-        Plot plot = chart.getPlot();
-        plot.setBackgroundPaint(Color.white);
-        plot.setOutlineVisible(false);
-       
-        Image graf = graficoPNG(chart, tituloGrafico, larguraGrafico, alturaGrafico);
-        graf.setAlignment(Element.ALIGN_CENTER);
-        doc.add(graf);
-
+        chart.getStyler().setSeriesColors(cores);
+        for (int i = 0; i < nome.size(); i++) {
+            chart.addSeries(nome.get(i), valor.get(i));
+        }
+        chart.getStyler().setChartBackgroundColor(null);
+        chart.getStyler().setPlotBorderColor(null);
+        BitmapEncoder.saveBitmap(chart, "./" + tituloGrafico, BitmapFormat.PNG);
+        addGraficoCircular(tituloGrafico);
     }
 
-    @Override
-    public void addGraficoCircular(String tituloGrafico, ArrayList<String> nome, ArrayList<Double> valor)
+    private void addGraficoCircular(String tituloGrafico)
             throws IOException, BadElementException, DocumentException {
 
-        DefaultPieDataset data = new DefaultPieDataset();
-        for (int i = 0; i < nome.toArray().length; i++) {
-            data.setValue(nome.get(i), valor.get(i));
-        }
-        JFreeChart chart = ChartFactory.createPieChart3D(tituloGrafico,
-                data, true, true, true);
-        PiePlot3D plot = (PiePlot3D) chart.getPlot();
-        plot.setLabelLinksVisible(true);
-        plot.setNoDataMessage("Não existem dados para serem exibidos no gráfico");
-        plot.setStartAngle(90);
-        plot.setDirection(Rotation.CLOCKWISE);
-        plot.setForegroundAlpha(0.5f);
-        plot.setInteriorGap(0.20);
-        Image graf = graficoPNG(chart, tituloGrafico, 300, 300);
+        Image graf = graficoPNG(tituloGrafico, 500, 400);
         graf.setAlignment(Element.ALIGN_CENTER);
         doc.add(graf);
 
     }
 
-    private Image graficoPNG(JFreeChart grafico, String tituloGrafico, int largura, int altura) throws IOException, BadElementException {
-        OutputStream arquivo = new FileOutputStream(tituloGrafico + ".png");
-        ChartUtilities.writeChartAsPNG(arquivo, grafico, largura, altura);
+    private Image graficoPNG(String tituloGrafico, int largura, int altura) throws IOException, BadElementException {
         Image png = Image.getInstance(tituloGrafico + ".png");
+        png.scaleAbsolute(largura, altura);
         return png;
     }
 
@@ -252,23 +222,23 @@ public class PDF implements Documento {
             String nomeColuna, ArrayList<String> nome, ArrayList<String> linha, double[][] valor) throws IOException,
             BadElementException, DocumentException {
 
-        DefaultCategoryDataset ds = new DefaultCategoryDataset();
-        for (int i = 0; i < valor.length; i++) {
-            for (int j = 0; j < valor[valor.length - 1].length; j++) {
-                ds.addValue(valor[i][j], linha.get(i), nome.get(j));
-            }
-        }
-        JFreeChart grafico = ChartFactory.createLineChart(tituloGrafico, nomeLinha,
-                nomeColuna, ds, PlotOrientation.VERTICAL, true, false, false);
-        CategoryPlot plot = grafico.getCategoryPlot();
-        plot.setBackgroundPaint(Color.white);
-        plot.setDomainGridlinePaint(Color.white);
-        plot.setRangeGridlinePaint(Color.white);
-        plot.setOutlineVisible(false);
-        Image png = graficoPNG(grafico, tituloGrafico, 300, 300);
-        png.setAlignment(Element.ALIGN_CENTER);
-        png.scaleAbsolute(400f, 300f);
-        doc.add(png);
+    }
+
+    public void addGraficoBarra(String tituloGrafico, String legendaEixoX, String legendaEixoY, List<String> nomes,
+            List<Double> valores, String significadoBarra) throws IOException, BadElementException, DocumentException {
+        CategoryChart chart = new CategoryChartBuilder().width(300).height(300).title(tituloGrafico).xAxisTitle(legendaEixoX).yAxisTitle(legendaEixoY).build();
+        chart.getStyler().setLegendPosition(LegendPosition.InsideNW);
+        chart.getStyler().setHasAnnotations(true);
+        chart.addSeries(significadoBarra, nomes, valores);
+        BitmapEncoder.saveBitmap(chart, "./" + tituloGrafico, BitmapFormat.PNG);
+        Image grafico = graficoPNG(tituloGrafico, 300, 300);
+        grafico.setAlignment(Element.ALIGN_CENTER);
+        doc.add(grafico);
+    }
+
+    @Override
+    public void fecharDocumento() {
+        doc.close();
     }
 
 }

@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package gerarelatorio;
+package InterfaceDocumento;
 
 import com.itextpdf.text.BadElementException;
 import com.itextpdf.text.BaseColor;
@@ -28,8 +28,6 @@ public interface Documento {
 
     public void addImagem(Image img, int alinhamento, float largura, float altura) throws DocumentException;
 
-    public void addGrafico(Image grafico, int alinhamento, float largura, float altura) throws DocumentException;
-
     public void addTexto(String texto, int alinhamento, int tamanho) throws DocumentException;
 
     public void addTexto(String texto, int tamanho) throws DocumentException;
@@ -45,13 +43,12 @@ public interface Documento {
     public void addTabela(Paragraph[] celula, int nColunas) throws DocumentException;
 
     public void addTabela(String[] celula, int nColunas) throws DocumentException;
-
+    
+    public void addTabela(Object tabela) throws DocumentException;
+    
     public void addGraficoCircular(String tituloGrafico, ArrayList<String> nome, ArrayList<Double> valor,
             int larguraGrafico, int alturaGrafico)
             throws IOException, BadElementException, DocumentException;
-
-    public void addGraficoCircular(String tituloGrafico, ArrayList<String> nome, ArrayList<Double> valor
-    ) throws IOException, BadElementException, DocumentException;
 
     public void addGraficoLinha(String tituloGrafico, String nomeLinha, String nomeColuna, ArrayList<String> nome, 
             ArrayList<String> linha, double[][] valor) throws IOException, BadElementException, DocumentException;
