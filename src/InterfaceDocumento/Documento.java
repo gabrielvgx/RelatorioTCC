@@ -11,6 +11,7 @@ import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Font;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.Paragraph;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -54,4 +55,5 @@ public interface Documento {
             ArrayList<String> linha, double[][] valor) throws IOException, BadElementException, DocumentException;
 
     public void fecharDocumento();
+    public File getArquivo();
 }

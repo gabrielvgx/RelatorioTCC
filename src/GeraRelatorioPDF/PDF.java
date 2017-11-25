@@ -1,12 +1,12 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ To change this license header, choose License Headers in Project Properties.
+ To change this template file, choose Tools | Templates
+ and open the template in the editor.
  */
 package GeraRelatorioPDF;
 
 import InterfaceDocumento.Documento;
-import RelatorioAnimal.TemplateAnimal;
+import TemplateRelatorio.Template;
 import com.itextpdf.text.BadElementException;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
@@ -21,6 +21,7 @@ import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import java.awt.Color;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,14 +35,16 @@ import org.knowm.xchart.PieChartBuilder;
 import org.knowm.xchart.style.Styler.LegendPosition;
 
 /**
- *
- * @author Familia
+
+ @author Familia
  */
 public class PDF implements Documento {
 
     private Document doc;
-    private PdfWriter escritor;
-
+    private FileOutputStream documento;
+    private File arquivo;
+    private int larguraGrafico = 520;
+    private int alturaGrafico = 450;
     public PDF() {
 
     }
@@ -49,14 +52,19 @@ public class PDF implements Documento {
     @Override
     public void gerarDocumento() throws IOException, DocumentException {
         doc = new Document();
-        PdfWriter.getInstance(doc, new FileOutputStream("Relatorio.pdf"));
+        arquivo = new File("Relatorio.pdf");
+        documento = new FileOutputStream(arquivo);
+        PdfWriter.getInstance(doc, documento);
         doc.open();
+
     }
 
     @Override
     public void gerarDocumento(String nomeDocumento) throws IOException, DocumentException {
         doc = new Document();
-        PdfWriter.getInstance(doc, new FileOutputStream(nomeDocumento + ".pdf"));
+        arquivo = new File(nomeDocumento + ".pdf");
+        documento = new FileOutputStream(arquivo);
+        PdfWriter.getInstance(doc, documento);
         doc.open();
     }
 
@@ -109,13 +117,13 @@ public class PDF implements Documento {
 
     @Override
     public void addTexto(String texto, int tamanho) throws DocumentException {
-        Paragraph textoParagrafo = new Paragraph(texto, FontFactory.getFont(TemplateAnimal.fontePadrao, tamanho));
+        Paragraph textoParagrafo = new Paragraph(texto, FontFactory.getFont(Template.FONTE_PADRAO, tamanho));
         doc.add(textoParagrafo);
     }
 
     @Override
     public void addTexto(String texto, int alinhamento, int tamanho) throws DocumentException {
-        Paragraph textoParagrafo = new Paragraph(texto, FontFactory.getFont(TemplateAnimal.fontePadrao, tamanho));
+        Paragraph textoParagrafo = new Paragraph(texto, FontFactory.getFont(Template.FONTE_PADRAO, tamanho));
         textoParagrafo.setAlignment(alinhamento);
         doc.add(textoParagrafo);
     }
@@ -139,8 +147,37 @@ public class PDF implements Documento {
         PdfPTable tabela = new PdfPTable(nColunas);
         int i = 0;
         for (String txtCelula : celula) {
+            Paragraph pr = null;
+            if (i < nColunas) {
+                pr = new Paragraph(txtCelula, FontFactory.getFont(FontFactory.TIMES_BOLD));
+            } else {
+                pr = new Paragraph(txtCelula, Template.TEXTO_SIMPLES);
+            }
             i++;
-            Paragraph pr = new Paragraph(txtCelula, TemplateAnimal.textoSimples);
+            PdfPCell celulaPDF = new PdfPCell(pr);
+            celulaPDF.setBorder(0);
+            tabela.setLockedWidth(true);
+            tabela.setTotalWidth(550f);
+            celulaPDF.setMinimumHeight(25f);
+            celulaPDF.setHorizontalAlignment(Element.ALIGN_CENTER);
+            tabela.addCell(celulaPDF);
+
+        }
+        for (int j = tabela.getRows().size(); j > tabela.getLastCompletedRowIndex(); j--) {
+            PdfPCell vazia = new PdfPCell(new Paragraph(""));
+            vazia.setBorder(0);
+            tabela.addCell(vazia);
+        }
+
+        doc.add(tabela);
+    }
+
+    public void addTabelaAnimal(String[] celula, int nColunas) throws DocumentException {
+        PdfPTable tabela = new PdfPTable(nColunas);
+        int i = 0;
+        for (String txtCelula : celula) {
+            i++;
+            Paragraph pr = new Paragraph(txtCelula, Template.TEXTO_SIMPLES);
             PdfPCell celulaPDF = new PdfPCell(pr);
             celulaPDF.setBorder(0);
             if (i % 2 == 0) {
@@ -209,29 +246,31 @@ public class PDF implements Documento {
     }
 
     /*
-    tituloGrafico: O texto que fica acima do grafico
-    nomeLinha: A legenda para o eixo X
-    nomeColuna: A legenda para o eixo Y
-    nome: Posições no eixo X (Ex: Anos dias)
-    linha: O nome das linhas que o grafico contem
-    valor: Cada linha da matriz eh uma linha do grafico e cada Coluna eh um valor
-    Ex: valor[0][0] é o valor Da linha 1 no primeiro ano;
+     tituloGrafico: O texto que fica acima do grafico nomeLinha: A legenda para
+     o eixo X nomeColuna: A legenda para o eixo Y nome: Posições no eixo X (Ex:
+     Anos dias) linha: O nome das linhas que o grafico contem valor: Cada linha
+     da matriz eh uma linha do grafico e cada Coluna eh um valor Ex: valor[0][0]
+     é o valor Da linha 1 no primeiro ano;
      */
     @Override
     public void addGraficoLinha(String tituloGrafico, String nomeLinha,
             String nomeColuna, ArrayList<String> nome, ArrayList<String> linha, double[][] valor) throws IOException,
             BadElementException, DocumentException {
-
     }
 
     public void addGraficoBarra(String tituloGrafico, String legendaEixoX, String legendaEixoY, List<String> nomes,
             List<Double> valores, String significadoBarra) throws IOException, BadElementException, DocumentException {
-        CategoryChart chart = new CategoryChartBuilder().width(300).height(300).title(tituloGrafico).xAxisTitle(legendaEixoX).yAxisTitle(legendaEixoY).build();
+        CategoryChart chart = new CategoryChartBuilder().width(larguraGrafico).height(alturaGrafico).title(tituloGrafico).xAxisTitle(legendaEixoX).yAxisTitle(legendaEixoY).build();
         chart.getStyler().setLegendPosition(LegendPosition.InsideNW);
         chart.getStyler().setHasAnnotations(true);
+        chart.getStyler().setChartBackgroundColor(null);
+        chart.getStyler().setPlotGridLinesVisible(false);
+        Color[] c = new Color[1];
+        c[0] = Color.decode("#37943a");
+        chart.getStyler().setSeriesColors(c);
         chart.addSeries(significadoBarra, nomes, valores);
         BitmapEncoder.saveBitmap(chart, "./" + tituloGrafico, BitmapFormat.PNG);
-        Image grafico = graficoPNG(tituloGrafico, 300, 300);
+        Image grafico = graficoPNG(tituloGrafico, larguraGrafico, alturaGrafico);
         grafico.setAlignment(Element.ALIGN_CENTER);
         doc.add(grafico);
     }
@@ -241,4 +280,8 @@ public class PDF implements Documento {
         doc.close();
     }
 
+    @Override
+    public File getArquivo() {
+        return arquivo;
+    }
 }
